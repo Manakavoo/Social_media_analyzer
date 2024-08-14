@@ -1,0 +1,21 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f8f9fa;
+}
+
+h1 {
+    text-align: center;
+    color: #343a40;
+}
+
+.list-group-item {
+    background-color: #ffffff;
+}
+
+.list-group-item:hover {
+    background-color: #5b4444;
+}
+
+canvas {
+    max-width: 100%;
+}

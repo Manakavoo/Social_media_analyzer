@@ -1,0 +1,47 @@
+
+  {% extends 'index.html' %}
+
+  {% block title %}Dashboard{% endblock %}
+
+  {% block content %}
+          <div class="container text-center">
+            <div class="row">
+              <div class="col">
+                <h4>Total Views</h4>
+                <p>{{ metrics[0] }}</p>
+              </div>
+              <div class="col">
+                <h4>Total likes</h4>
+                <p>{{ metrics[1] }}</p>
+              </div>
+              <div class="col">
+                <h4>Total Comments</h4>
+                <p>{{ metrics[2] }}</p>
+              </div>
+            </div>
+          </div>
+
+        <!-- Video List -->
+        <h3 class="my-4">videos</h3>
+        <div class="list-group">
+            {% for video in videos %}
+                <a href={{ video.video_link }} class="list-group-item list-group-item-action" target="_blank">
+                    <h5 class="mb-1">{{ video.title }}</h5>
+                    <h6>{{ video.channelTitle }}</h6>
+                    <small>Views: {{ video.viewCount }}, Likes: {{ video.likeCount }}, Comments: {{ video.commentCount }}, Date: {{ video.publishedDate}}</small>
+                </a>
+            {% endfor %}
+        </div>
+        
+        <!-- Comment Sentiments -->
+        <!-- <h3 class="my-4">Comment Sentiments</h3>
+        <div class="row">
+            <div class="col-md-4">
+                <canvas id="sentimentChart"></canvas>
+            </div>
+            <div class="col-md-8">
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div> -->
+    
+        {% endblock %}
