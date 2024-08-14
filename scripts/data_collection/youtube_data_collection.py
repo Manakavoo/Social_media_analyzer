@@ -399,7 +399,11 @@ import csv
 import os
 from datetime import timedelta
 from urllib.parse import urlparse, parse_qs
-from googleapiclient.discovery import build
+from googleapiclient.discovery import build # type: ignore
+
+API_KEY = "AIzaSyActb8A7PbAo5NpHlQ8SWi_i7GoIXP8lRk"
+folder_path = 'data/raw/'
+
 
 def sanitize_filename(filename):
     return re.sub(r'[<>:"/\\|?*\x00-\x1F ]', '_', filename)
@@ -440,7 +444,7 @@ def search_videos_by_topic(youtube, query, max_results=3):
     video_ids = [item['id']['videoId'] for item in search_response['items']]
     return video_ids
 
-def retrieve_video_details(youtube, video_id):
+def retrieve_video_details(youtube, video_id,topic):
     video_response = youtube.videos().list(
         part="snippet,statistics,contentDetails",
         id=video_id
@@ -478,7 +482,8 @@ def retrieve_video_details(youtube, video_id):
         'viewCount': statistics.get("viewCount", 0),
         'likeCount': statistics.get("likeCount", 0),
         'favoriteCount': statistics.get("favoriteCount", 0),
-        'commentCount': statistics.get("commentCount", 0)
+        'commentCount': statistics.get("commentCount", 0),
+        'topic':topic
     }
 
     return video_data
@@ -550,41 +555,52 @@ def save_to_csv(file_path, data, fieldnames, key_field):
         writer.writeheader()
         writer.writerows(existing_data.values())
 
-API_KEY = "AIzaSyActb8A7PbAo5NpHlQ8SWi_i7GoIXP8lRk"
-folder_path = 'data/raw/youtube_data/'
+# API_KEY = "AIzaSyActb8A7PbAo5NpHlQ8SWi_i7GoIXP8lRk"
+# folder_path = 'data/raw/youtube_data/'
 
-youtube = build("youtube", "v3", developerKey=API_KEY)
-topic = "tamil"
-topic= sanitize_filename(topic)
-video_ids = search_videos_by_topic(youtube, topic, max_results=5)
-folder_path_topic = 'data/raw/youtube_data/'+str(topic)
+def youtube_data_collection(topic:str=None, limit=4):
+    if not topic:
+        print("Topic parameter not given...")
+        return None
+    youtube = build("youtube", "v3", developerKey=API_KEY,cache_discovery=False)
+    g_topic=topic
+    topic= sanitize_filename(topic)
+    video_ids = search_videos_by_topic(youtube, topic, max_results=limit)
+    folder_path_topic = folder_path+str(topic)
 
-if not os.path.exists(folder_path_topic):
-    os.makedirs(folder_path_topic)
+    if not os.path.exists(folder_path_topic):
+        os.makedirs(folder_path_topic)
 
-if not os.path.exists(folder_path):
-    os.makedirs(folder_path)
+    if not os.path.exists(folder_path):
+        os.makedirs(folder_path)
+    
+    video_details_list = []
+    for video_id in video_ids:
+        video_details = retrieve_video_details(youtube, video_id,g_topic)
+        if video_details:
+            video_details_list.append(video_details)
+            try:
+                comments = retrieve_all_comments(youtube, video_id)
+                sanitized_title = sanitize_filename(video_details['title'])
+                comment_file = os.path.join(folder_path_topic, f"{sanitized_title}_{video_id}.csv")
+                save_to_csv(comment_file, comments, ["timestamp", "comment_text", "author", "like_count", "video_id"], "timestamp")
+            except Exception as e:
+                print(f"Skipping comments for video ID {video_id} due to error: {e}")
 
-video_details_list = []
-for video_id in video_ids:
-    video_details = retrieve_video_details(youtube, video_id)
-    if video_details:
-        video_details_list.append(video_details)
-        try:
-            comments = retrieve_all_comments(youtube, video_id)
-            sanitized_title = sanitize_filename(video_details['title'])
-            comment_file = os.path.join(folder_path_topic, f"{sanitized_title}_{video_id}.csv")
-            save_to_csv(comment_file, comments, ["timestamp", "comment_text", "author", "like_count", "video_id"], "timestamp")
-        except Exception as e:
-            print(f"Skipping comments for video ID {video_id} due to error: {e}")
-
-video_details_file = os.path.join(folder_path, 'Video_Details.csv')
-save_to_csv(video_details_file, video_details_list, [
-    'video_id', 'publishedAt', 'channelId', 'title', 'description', 'thumbnails', 'channelTitle',
-    'tags', 'categoryId', 'liveBroadcastContent', 'defaultAudioLanguage', 'duration', 'dimension',
-    'definition', 'caption', 'licensedContent', 'contentRating', 'projection', 'viewCount',
-    'likeCount', 'favoriteCount', 'commentCount'
-], 'video_id')
+    video_details_file = os.path.join(folder_path, 'Video_Details.csv')
+    save_to_csv(video_details_file, video_details_list, [
+        'video_id', 'publishedAt', 'channelId', 'title', 'description', 'thumbnails', 'channelTitle',
+        'tags', 'categoryId', 'liveBroadcastContent', 'defaultAudioLanguage', 'duration', 'dimension',
+        'definition', 'caption', 'licensedContent', 'contentRating', 'projection', 'viewCount',
+        'likeCount', 'favoriteCount', 'commentCount','topic'
+    ], 'video_id')
 
 
-print(f"Video details and comments have been updated for topic: {topic}")
+    print(f"Video details and comments have been updated for topic: {topic}")
+    return topic
+
+
+# youtube_data_collection('data')
+
+
+
