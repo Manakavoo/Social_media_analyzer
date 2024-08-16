@@ -2,4 +2,5 @@ myenv/
 docs/
 data/
 web_app/
+__pycache__/
 

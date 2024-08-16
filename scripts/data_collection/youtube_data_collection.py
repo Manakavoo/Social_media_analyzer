@@ -444,7 +444,21 @@ def search_videos_by_topic(youtube, query, max_results=3):
     video_ids = [item['id']['videoId'] for item in search_response['items']]
     return video_ids
 
-def retrieve_video_details(youtube, video_id,topic):
+def get_trending_videos(region_code='IN', max_results=3):
+    youtube = build("youtube", "v3", developerKey=API_KEY,cache_discovery=False)
+    request = youtube.videos().list(
+        part='snippet,statistics',
+        chart='mostPopular',
+        regionCode=region_code,
+        maxResults=max_results
+    )
+    response = request.execute()
+    video_ids = [item['id'] for item in response['items']]
+    return video_ids
+    # return response
+
+
+def retrieve_video_details(youtube, video_id,topic=None):
     video_response = youtube.videos().list(
         part="snippet,statistics,contentDetails",
         id=video_id
@@ -558,14 +572,22 @@ def save_to_csv(file_path, data, fieldnames, key_field):
 # API_KEY = "AIzaSyActb8A7PbAo5NpHlQ8SWi_i7GoIXP8lRk"
 # folder_path = 'data/raw/youtube_data/'
 
+
+
+    return None
 def youtube_data_collection(topic:str=None, limit=4):
+    print("data collection initiated...")
     if not topic:
         print("Topic parameter not given...")
-        return None
+        return False
     youtube = build("youtube", "v3", developerKey=API_KEY,cache_discovery=False)
     g_topic=topic
     topic= sanitize_filename(topic)
-    video_ids = search_videos_by_topic(youtube, topic, max_results=limit)
+    if topic=='trending':
+        video_ids = get_trending_videos('IN',limit)
+    else:
+        video_ids = search_videos_by_topic(youtube, topic, max_results=limit)
+    
     folder_path_topic = folder_path+str(topic)
 
     if not os.path.exists(folder_path_topic):
@@ -597,10 +619,16 @@ def youtube_data_collection(topic:str=None, limit=4):
 
 
     print(f"Video details and comments have been updated for topic: {topic}")
+    print("data collection done..")
     return topic
 
+# youtube_data_collection('trending')
 
-# youtube_data_collection('data')
+
+# search_videos_by_topic()
+# print(get_trending_videos())
+
+
 
 
 
