@@ -401,7 +401,7 @@ from datetime import timedelta
 from urllib.parse import urlparse, parse_qs
 from googleapiclient.discovery import build # type: ignore
 
-API_KEY = "AIzaSyActb8A7PbAo5NpHlQ8SWi_i7GoIXP8lRk"
+API_KEY = "youtube_api_key"
 folder_path = 'data/raw/'
 
 
